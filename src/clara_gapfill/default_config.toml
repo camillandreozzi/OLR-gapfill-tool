@@ -1,0 +1,102 @@
+# clara-gapfill configuration.
+#
+# Every setting the pipeline uses is listed here with its default. Write your own copy with
+#     clara-gapfill init-config my_config.toml
+# keep only the lines you want to change, and pass it with -c my_config.toml. Any setting can also be
+# overridden for a single run with --set section.key=value (e.g. --set grid.res_deg=1).
+# Relative paths are resolved against the folder of the config file (or the current folder without one).
+#
+# Units: CLARA OLR is a radiance (W m-2 sr-1), ERA5 OLR a flux (W m-2). The model's beta1 converts one into
+# the other, so the two are never subtracted or compared directly.
+
+[paths]
+clara_dir = "data/CLARA"   # CLARA_OLR*.tar.gz and CLARA_lat_lon_*.tar.gz archives, or the extracted .save / .csv files
+era5_dir = "data/ERA5"     # ERA5 "monthly averaged reanalysis by hour of day" ttr files (NetCDF, native 0.25 deg)
+work_dir = "work"          # intermediate files (extracted archives, geolocated samples, model-ready tables)
+output_dir = "output"      # fitted model, predictions, maps, validation
+
+[grid]
+# Cell size (deg) of the cell-month means and of the predictions: an integer that divides 180
+# (1, 2, 3, 4, 5, 6, 9, 10, 12, 15, 18, 20, 30, ...). The reference model was selected at 5 deg.
+# Outputs go to <work_dir>/res<N>/ and <output_dir>/res<N>/, so runs at different resolutions coexist.
+res_deg = 5
+
+[time]
+first_month = "2020-01"    # first month of the training data and of the prediction grid
+last_month = "2026-09"     # last month (months ERA5 has not published yet are left out with a warning)
+origin = "2020-01-01"      # t = 0 of the model's long-term time coordinate (years)
+# CLARA data gap with a calibration step across it (CLARA / ERA5 rises by ~23 %). With model.gap_step the mean
+# function gets beta2 * post_gap, post_gap = 1 from gap_start on: the unobserved gap months count as post-gap.
+gap_start = "2021-09"
+gap_end = "2022-05"
+
+[qc]
+# Instrument constants of CLARA (NorSat-1). A sample is used when it is Earth viewing, within the plausible
+# range, on the night side and seen at a moderate viewing zenith angle.
+olr_min = 50.0             # W m-2 sr-1, lower plausible limit ...
+olr_min_from = { 2024 = 75.0, 2025 = 90.0 }   # ... raised from these years on {first year = limit}
+olr_max = 400.0            # W m-2 sr-1; the OLR channel also sees the Sun (1e4-9e4): not Earth OLR
+night_sza_min = 100.0      # deg, footprint solar zenith angle; CLARA measures OLR on the night side only
+vza_max = 60.0             # deg, viewing zenith angle at the footprint; larger angles see a colder limb path
+overpass_gap_min = 20.0    # min, a longer gap between QC'd samples starts a new overpass (orbit ~96 min)
+geo_max_gap_s = 65.0       # s, geolocation rows (1 min apart) further apart than this are not interpolated
+
+[era5]
+night_sza_min = 100.0      # deg, night definition of the ERA5 night-time mean (same as qc.night_sza_min)
+fallback_hours = 3         # polar-day cells (no night hour in the month): mean of this many darkest hours
+smoothing_radii_km = [0.0, 300.0, 600.0, 1000.0, 1500.0]   # spherical-cap smoothing of ERA5 (CLARA's wide footprint)
+# Radius of the ERA5 predictor: "auto" picks the radius of smoothing_radii_km with the highest correlation
+# with CLARA on the training rows (600 km for the reference 5 deg fit), or give one of the radii.
+radius_km = "auto"
+
+[model]
+# The defaults are the settings of the winning model of the kernel comparison (exponential kernel, 1000
+# inducing points, 3 starts). On a laptop the 5 deg fit takes roughly 20-60 min; for a quicker fit use
+#     --set model.n_inducing=500 --set model.restarts=1
+kernel = "exponential"     # exponential (winner) | gaussian | matern32
+gap_step = true            # beta2 * post_gap in the mean function (see [time]); needs data on both sides of gap_start
+n_inducing = 1000          # M, k-means inducing inputs of the sparse (VFE) approximation
+restarts = 3               # 1-3 L-BFGS starts with length scales x1, x0.5, x2; the best bound is kept
+max_iter = 200             # L-BFGS iterations per start
+seed = 20261022            # k-means seed
+jitter = 1e-6              # relative jitter of the Cholesky factorisations
+threads = 0                # torch CPU threads; 0 = torch's default
+chunk_size = 20000         # rows per chunk of the checkpointed bound (memory O(M x chunk))
+# Data-independent initial values (physical units, W m-2 sr-1 for the SDs).
+init_sigma_A = 15.0        # space x season component
+init_sigma_B = 15.0        # space x long-term component
+init_ell_space_A_km = 2000.0
+init_ell_season_days = 60.0
+init_ell_space_B_km = 4000.0
+init_ell_time_years = 1.0
+init_sigma0 = 15.0         # irreducible noise
+init_sigma1 = 30.0         # per-overpass sampling noise (divided by the number of overpasses)
+
+[predict]
+n_overpasses_for_sd = 1    # pred_sd_obs is the SD of a new cell-month mean from this many overpasses
+table_format = "csv"       # grid_predictions table: csv | parquet (parquet is ~10x smaller; at 1 deg the CSV is ~0.6 GB)
+netcdf = true              # one NetCDF per year (time, lat, lon)
+monthly_csv = false        # one CSV per month as well
+global_mean = true         # area-weighted global mean per month with the SD from the full posterior covariance
+batch_rows = 5000          # grid rows predicted at once; memory ~0.1 GB per 1000 rows with 1000 inducing points
+
+[maps]
+enabled = true
+months = "all"             # "all", "observed" (months with CLARA data) or a list such as ["2021-01", "2023-07"]
+projection = "robinson"    # robinson | platecarree (needs cartopy; plain lat-lon axes without it)
+dpi = 110
+
+[validate]
+# Blocked cross-validation (clara-gapfill validate), the scheme that selected the kernel.
+schemes = ["spatial", "temporal", "joint"]
+spatial_block_lat = 60.0
+spatial_block_lon = 60.0
+spatial_buffer_km = 1500.0     # training excludes cells within this distance of the held-out block
+temporal_window_months = 6
+temporal_buffer_months = 1
+joint_block_lat = 60.0
+joint_block_lon = 60.0
+joint_window_months = 6
+joint_buffer_km = 1500.0
+joint_buffer_months = 1
+joint_n_folds = 18

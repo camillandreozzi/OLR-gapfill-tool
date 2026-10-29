@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "clara-olr-gapfill: gap-filled monthly maps of CLARA night-side OLR with an ERA5-informed Gaussian process"
+version: 0.1.0
+license: MIT
+repository-code: "https://github.com/camillandreozzi/clara-olr-gapfill"
+authors:
+  - family-names: Andreozzi
+    given-names: Camilla
+    affiliation: "ETH Zurich"
+keywords:
+  - outgoing longwave radiation
+  - CLARA
+  - NorSat-1
+  - ERA5
+  - Gaussian process
+  - gap filling
+references:
+  - type: article
+    title: "The ERA5 global reanalysis"
+    authors:
+      - family-names: Hersbach
+        given-names: Hans
+    journal: "Quarterly Journal of the Royal Meteorological Society"
+    volume: 146
+    start: 1999
+    end: 2049
+    year: 2020
+    doi: "10.1002/qj.3803"
+  - type: conference-paper
+    title: "Variational learning of inducing variables in sparse Gaussian processes"
+    authors:
+      - family-names: Titsias
+        given-names: Michalis
+    conference:
+      name: "AISTATS"
+    year: 2009
