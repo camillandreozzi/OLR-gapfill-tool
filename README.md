@@ -221,7 +221,7 @@ Full-data fit:
 | Stage | Time |
 |---|---|
 | `prepare` | ~1.5 min, including the archive extraction (re-runs at another resolution: under a minute) |
-| `fit` with the default settings | 21 min on 8 CPU cores (the reference fit); about an hour on a 4-core laptop. `--set model.restarts=1` takes about a third of that |
+| `fit` with the default settings | about 46 min of CPU time on an Apple-silicon laptop (about 15–25 min on 4 cores); 21 min on 8 cluster cores. `--set model.restarts=1` takes about a third of that |
 | `predict` | under a minute (209,952 cell-months) |
 | `maps`, every month | about a minute of CPU for the 299 figures |
 | `validate`, all 49 folds | one fit per fold: many hours with the default settings, so consider `--set model.restarts=1` |

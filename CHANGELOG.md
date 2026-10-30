@@ -17,3 +17,6 @@ First release.
 - At 5°, preprocessing and prediction were checked against the original research pipeline. The training
   table and the prediction grid are identical; the predictions of the imported reference model are identical
   to 3 decimals.
+- A refit with the default settings reaches the reference bound to 2·10⁻⁵ per observation. It differs only
+  because k-means places the inducing points slightly differently across machines. Its maps differ from the
+  reference by 0.18 W m⁻² sr⁻¹ RMS.
