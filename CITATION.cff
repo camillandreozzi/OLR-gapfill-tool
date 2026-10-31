@@ -7,7 +7,16 @@ repository-code: "https://github.com/camillandreozzi/clara-olr-gapfill"
 authors:
   - family-names: Andreozzi
     given-names: Camilla
-    affiliation: "ETH Zurich"
+    affiliation: "ETH Zurich, Zurich, Switzerland"
+  - family-names: Haberreiter
+    given-names: Margit
+    affiliation: "Physikalisch-Meteorologisches Observatorium Davos / World Radiation Center (PMOD/WRC), Davos, Switzerland"
+  - family-names: Montillet
+    given-names: Jean-Philippe
+    affiliation: "Physikalisch-Meteorologisches Observatorium Davos / World Radiation Center (PMOD/WRC), Davos, Switzerland"
+  - family-names: Finsterle
+    given-names: Wolfgang
+    affiliation: "Physikalisch-Meteorologisches Observatorium Davos / World Radiation Center (PMOD/WRC), Davos, Switzerland"
 keywords:
   - outgoing longwave radiation
   - CLARA
